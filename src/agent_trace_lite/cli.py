@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 
 from .core import content_hash, normalize_records, read_jsonl
+from .demo import DEMO_RECORDS
 from .viewer import write_html
 
 
@@ -22,6 +23,9 @@ def build_parser() -> argparse.ArgumentParser:
     view.add_argument("input", type=Path, help="input JSONL file, or - for stdin")
     view.add_argument("-o", "--output", type=Path, required=True, help="HTML output path")
     view.add_argument("--title", default="Agent Trace Lite", help="HTML document title")
+    demo = subparsers.add_parser("demo", help="render the built-in synthetic trace without reading a file")
+    demo.add_argument("-o", "--output", type=Path, required=True, help="HTML output path")
+    demo.add_argument("--title", default="Agent Trace Lite demo", help="HTML document title")
     return parser
 
 
@@ -35,7 +39,7 @@ def _read(path: Path) -> list[dict]:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        events = normalize_records(_read(args.input))
+        events = normalize_records(DEMO_RECORDS if args.command == "demo" else _read(args.input))
     except (OSError, ValueError) as exc:
         print(f"agent-trace: {exc}", file=sys.stderr)
         return 2
@@ -47,9 +51,12 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.write(text)
         if args.hash:
             print(f"sha256={content_hash(events)}", file=sys.stderr)
-    else:
+    elif args.command == "view":
         write_html(events, args.output, title=args.title)
         print(f"wrote {args.output} ({len(events)} events)")
+    else:
+        write_html(events, args.output, title=args.title)
+        print(f"wrote {args.output} ({len(events)} built-in demo events)")
     return 0
 
 

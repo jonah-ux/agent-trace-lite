@@ -4,6 +4,7 @@ import json
 import pytest
 
 from agent_trace_lite.core import normalize_records, read_jsonl
+from agent_trace_lite.demo import DEMO_RECORDS
 from agent_trace_lite.viewer import render_html
 
 
@@ -39,6 +40,11 @@ def test_synthetic_fixture_covers_supported_event_families():
     events = normalize_records(read_jsonl(fixture.read_text(encoding="utf-8").splitlines()))
     assert {event["type"] for event in events} == {"model", "tool", "subprocess", "transfer", "guardrail", "error"}
     assert events[0]["data"]["api_key"] == "[REDACTED]"
+
+
+def test_builtin_demo_covers_same_event_families():
+    events = normalize_records(DEMO_RECORDS)
+    assert {event["type"] for event in events} == {"model", "tool", "subprocess", "transfer", "guardrail", "error"}
 
 
 def test_jsonl_errors_are_actionable():

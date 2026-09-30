@@ -23,6 +23,7 @@ python -m pip install .
 ```sh
 agent-trace normalize trace.jsonl -o normalized.jsonl --hash
 agent-trace view trace.jsonl -o trace.html
+agent-trace demo -o demo.html
 ```
 
 Open `trace.html` in any browser. The viewer is a single self-contained file and works offline. Use `-` as the input path to read JSONL from stdin:
@@ -50,10 +51,16 @@ python -m pytest
 python -m build
 ```
 
-Run the checked-in demo without network access:
+Run the checked-in fixture demo without network access:
 
 ```sh
 agent-trace view examples/demo.jsonl -o trace-demo.html
+```
+
+Or render the same synthetic event families without a fixture file:
+
+```sh
+agent-trace demo -o trace-demo.html
 ```
 
 When developing from a source checkout before installing the package, use:
