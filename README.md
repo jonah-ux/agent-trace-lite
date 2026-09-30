@@ -26,6 +26,18 @@ agent-trace view events.jsonl --html trace.html
 open trace.html
 ```
 
+## See it work
+
+The demo turns two local events into a redacted HTML artifact and reports exactly what it wrote (the temporary path varies per run):
+
+```json
+{"schema":"agent-trace/v1","events":2,"html":"<temporary>/trace.html"}
+```
+
+## Related tools
+
+Use [Chatlens](https://github.com/jonah-ux/chatlens) to find the session, [Agent Proof](https://github.com/jonah-ux/agent-proof) to record the investigation, and [Context Pack](https://github.com/jonah-ux/context-pack) to bound the repository context alongside the trace.
+
 The command prints an `agent-trace/v1` summary with the event count and output path. It is a
 small local viewer for debugging agent runs, not a hosted telemetry system.
 
