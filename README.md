@@ -1,22 +1,33 @@
-# Offline Agent Trace Viewer
+# Agent Trace Lite
 
 ![offline agent trace viewer workflow](docs/header.svg)
 
 **Turn JSONL events into a clean, redacted local timeline.**
 
-## Install
+[![CI](https://github.com/jonah-ux/agent-trace-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/jonah-ux/agent-trace-lite/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776ab)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
+
+Agent Trace Lite turns line-oriented event logs into a small HTML timeline. Sensitive-looking
+keys such as `token`, `secret`, and `password` are redacted in the rendered view, while the
+original JSONL remains under your control on disk.
+
+## Try it in 30 seconds
 
 ```bash
-pip install git+https://github.com/jonah-ux/agent-trace-lite.git@main
+python -m pip install git+https://github.com/jonah-ux/agent-trace-lite.git@main
+python demos/demo.py
 ```
 
-## Quick start
+Point it at any JSONL event stream:
 
 ```bash
-agent-trace --help
+agent-trace view events.jsonl --html trace.html
+open trace.html
 ```
 
-The first release is intentionally small, offline-friendly, and easy to inspect. JSON output is designed for agents; diagnostics stay explicit.
+The command prints an `agent-trace/v1` summary with the event count and output path. It is a
+small local viewer for debugging agent runs, not a hosted telemetry system.
 
 ## Development
 
@@ -26,8 +37,4 @@ python -m build --sdist --wheel
 python demos/demo.py
 ```
 
-## Limits
-
-Read the command help and [release guide](docs/releasing.md) before using this in automation. This project does not claim permissions, isolation, verification, or provider behavior beyond the output fields it can prove.
-
-MIT licensed. Contributions and sanitized bug reports are welcome.
+MIT licensed.
