@@ -7,7 +7,7 @@
 ## Install
 
 ```bash
-pip install git+https://github.com/jonah-ux/agent-trace-lite.git@v0.1.0
+pip install git+https://github.com/jonah-ux/agent-trace-lite.git@main
 ```
 
 ## Quick start
