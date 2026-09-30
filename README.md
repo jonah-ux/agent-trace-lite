@@ -49,6 +49,8 @@ The `data` object is preserved with stable key ordering. Keys matching secret, t
 python -m pip install -e '.[test]'
 python -m pytest
 python -m build
+python -m twine check dist/*
+python -m twine check dist/*
 ```
 
 Run the checked-in fixture demo without network access:
