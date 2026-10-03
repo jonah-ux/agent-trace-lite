@@ -78,6 +78,13 @@ It is a small local viewer for debugging agent runs, not a hosted telemetry syst
 digest is never the raw event content, and query/view output only contains the recursively
 redacted representation.
 
+## Public surface audit
+
+Run `python scripts/audit_public_surface.py --json` from a clean checkout. The receipt checks
+dependency and license declarations, release-workflow provenance markers, and high-signal secret
+patterns across tracked text files. Pass `--dist-dir dist` to compare wheel and sdist bytes with
+`SHA256SUMS`; missing artifacts remain `unavailable`.
+
 ## Development
 
 ```bash
