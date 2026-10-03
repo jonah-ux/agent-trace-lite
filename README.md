@@ -44,6 +44,13 @@ agent-trace inspect events.jsonl
 agent-trace query events.jsonl --type tool --contains timeout --limit 20
 ```
 
+All three commands accept `--max-bytes`, `--max-events`, and `--max-line-bytes`
+to bound input. A limited `query --limit N` parses incrementally and stops after
+N redacted matches; inspect and view still read the complete input so their raw
+and redacted digests retain their existing meaning. Bound violations and parse
+failures emit `agent-trace/error/v1` on stdout, preserve the human line diagnostic
+on stderr, and exit `2`.
+
 `inspect` emits `agent-trace/inspect/v1` with deterministic raw and redacted SHA-256
 digests, line and event counts, type counts, and the number of redactions. `query` emits
 `agent-trace/query/v1` and recursively redacts nested sensitive keys before matching or
