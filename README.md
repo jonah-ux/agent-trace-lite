@@ -14,14 +14,25 @@ original JSONL remains under your control on disk.
 
 ## Try it in 30 seconds
 
+This repository works on its own. Its fixtures, CLI, and demo require no other Jonah-UX repository.
+Companion links below are optional ideas for connecting outputs after the default workflow works.
+
 ```bash
-python -m pip install git+https://github.com/jonah-ux/agent-trace-lite.git@main
-python demos/demo.py
+git clone --depth 1 https://github.com/jonah-ux/agent-trace-lite.git
+cd agent-trace-lite
+python3 -m venv .venv
+. .venv/bin/activate
+python3 -m pip install .
+python3 demos/demo.py
 ```
 
 Point it at any JSONL event stream:
 
 ```bash
+cat > events.jsonl <<'JSONL'
+{"type":"tool","name":"read_file","token":"demo-secret"}
+{"type":"result","message":"done"}
+JSONL
 agent-trace view events.jsonl --html trace.html
 open trace.html
 ```
@@ -47,6 +58,10 @@ The demo turns two local events into a redacted HTML artifact and reports exactl
 {"schema":"agent-trace/v1","events":2,"html":"<temporary>/trace.html"}
 ```
 
+Open the [redaction and event inspector walkthrough](docs/walkthrough.html) for a visual tour of
+the timeline, digest readback, and safe query path. The browser board uses illustrative events;
+it does not invoke the CLI or read your files.
+
 ## Related tools
 
 Use [Chatlens](https://github.com/jonah-ux/chatlens) to find the session, [Agent Proof](https://github.com/jonah-ux/agent-proof) to record the investigation, and [Context Pack](https://github.com/jonah-ux/context-pack) to bound the repository context alongside the trace.
@@ -61,7 +76,6 @@ redacted representation.
 ```bash
 python -m unittest discover -s tests
 python -m build --sdist --wheel
-python demos/demo.py
 ```
 
 MIT licensed.
