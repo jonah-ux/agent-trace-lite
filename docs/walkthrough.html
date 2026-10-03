@@ -37,6 +37,11 @@
     .digest-card { padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: #07151ccc; }
     .digest-card strong { display: block; margin-top: 8px; font: 1rem ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
     .count { color: var(--good); font-size: 1.7rem; }
+    .filter-row { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 18px 0 2px; }
+    label { display: grid; gap: 5px; color: var(--muted); font-size: .82rem; }
+    select, button.filter { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: #07151c; color: var(--ink); font: .84rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+    button.filter { border-color: #67e8f966; color: var(--accent); cursor: pointer; }
+    button.filter:hover, button.filter:focus-visible, select:focus-visible { border-color: var(--accent); outline: 2px solid #67e8f955; outline-offset: 2px; }
     .command { position: relative; margin-top: 16px; padding: 16px 72px 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: #041016; color: #d9faff; font: .86rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
     button.copy { position: absolute; top: 10px; right: 10px; border: 1px solid #67e8f966; border-radius: 8px; padding: 7px 9px; background: #103743; color: var(--accent); cursor: pointer; font: .75rem ui-monospace, SFMono-Regular, Menlo, monospace; }
     button.copy:hover, button.copy:focus-visible { border-color: var(--accent); outline: 2px solid #67e8f955; outline-offset: 2px; }
@@ -68,9 +73,9 @@
       <div class="panel-head"><div><div class="eyebrow">01 / event inspector</div><h2 id="inspect-title">Readable enough for humans, strict enough for incidents.</h2></div><div class="stamp">● REDACTIONS 02</div></div>
       <div class="inspector">
         <div class="event-list" aria-label="Illustrative redacted events">
-          <article class="event"><time>10:14:02Z</time><span class="kind">tool</span><code>read_file <span class="redacted">token=[REDACTED]</span></code></article>
-          <article class="event"><time>10:14:03Z</time><span class="kind">result</span><code>loaded config.json</code></article>
-          <article class="event"><time>10:14:05Z</time><span class="kind">assistant</span><code>Found the timeout path; prepare a bounded report.</code></article>
+          <article class="event" data-kind="tool"><time>10:14:02Z</time><span class="kind">tool</span><code>read_file <span class="redacted">token=[REDACTED]</span></code></article>
+          <article class="event" data-kind="result"><time>10:14:03Z</time><span class="kind">result</span><code>loaded config.json</code></article>
+          <article class="event" data-kind="assistant"><time>10:14:05Z</time><span class="kind">assistant</span><code>Found the timeout path; prepare a bounded report.</code></article>
         </div>
         <aside class="digest" aria-label="Illustrative integrity summary">
           <div class="digest-card"><span class="eyebrow">raw sha-256</span><strong>3c4c…7a91</strong></div>
@@ -78,6 +83,7 @@
           <div class="digest-card"><span class="eyebrow">events / redactions</span><strong><span class="count">03</span> / 02</strong></div>
         </aside>
       </div>
+      <div class="filter-row"><label for="event-filter">Illustrative event filter<select id="event-filter"><option value="all">all events (3)</option><option value="tool">tool only (1)</option><option value="result">result only (1)</option><option value="assistant">assistant only (1)</option></select></label><button class="filter" id="apply-filter" type="button">show safe subset</button><span id="filter-status" class="stamp" role="status" aria-live="polite">Showing 3 redacted events.</span></div>
       <details><summary>What does this page prove?</summary><p>Only that the visual language makes the redaction boundary easy to inspect. The events and digests are illustrative browser data; the page does not open a file, redact a stream, or certify a trace.</p></details>
     </section>
 
@@ -87,10 +93,17 @@
       <div class="command"><code>agent-trace inspect events.jsonl</code><button class="copy" type="button" data-copy="agent-trace inspect events.jsonl">copy</button></div>
       <div class="command"><code>agent-trace query events.jsonl --type tool --contains timeout --limit 20</code><button class="copy" type="button" data-copy="agent-trace query events.jsonl --type tool --contains timeout --limit 20">copy</button></div>
       <p id="copy-status" role="status" aria-live="polite"></p>
-      <div class="foot"><span>Source of truth: the emitted <code>agent-trace/inspect/v1</code> or <code>agent-trace/query/v1</code> document.</span><a href="../README.md">Back to README</a></div>
+      <div class="foot"><span>Source of truth: the emitted <code>agent-trace/inspect/v1</code> or <code>agent-trace/query/v1</code> document.</span><a href="https://github.com/jonah-ux/agent-trace-lite#readme">Back to README</a></div>
     </section>
   </main>
   <script>
+    document.getElementById('apply-filter').addEventListener('click', () => {
+      const value = document.getElementById('event-filter').value;
+      const events = [...document.querySelectorAll('.event')];
+      const visible = events.filter((event) => value === 'all' || event.dataset.kind === value);
+      events.forEach((event) => { event.hidden = !visible.includes(event); });
+      document.getElementById('filter-status').textContent = `Showing ${visible.length} redacted event${visible.length === 1 ? '' : 's'}. Bounds stay visible.`;
+    });
     document.querySelectorAll('[data-copy]').forEach((button) => button.addEventListener('click', async () => {
       const status = document.getElementById('copy-status');
       try { await navigator.clipboard.writeText(button.dataset.copy); button.textContent = 'copied'; status.textContent = 'Command copied. The redaction gremlin stays local.'; }

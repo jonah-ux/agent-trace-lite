@@ -15,13 +15,19 @@ original JSONL remains under your control on disk.
 ## Try it in 30 seconds
 
 ```bash
-python -m pip install git+https://github.com/jonah-ux/agent-trace-lite.git@main
+git clone --depth 1 https://github.com/jonah-ux/agent-trace-lite.git
+cd agent-trace-lite
+python -m pip install .
 python demos/demo.py
 ```
 
 Point it at any JSONL event stream:
 
 ```bash
+cat > events.jsonl <<'JSONL'
+{"type":"tool","name":"read_file","token":"demo-secret"}
+{"type":"result","message":"done"}
+JSONL
 agent-trace view events.jsonl --html trace.html
 open trace.html
 ```
@@ -65,7 +71,6 @@ redacted representation.
 ```bash
 python -m unittest discover -s tests
 python -m build --sdist --wheel
-python demos/demo.py
 ```
 
 MIT licensed.
