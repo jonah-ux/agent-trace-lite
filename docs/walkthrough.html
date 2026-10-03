@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A self-contained visual walkthrough of Agent Trace Lite redaction and integrity inspection.">
+  <title>Agent Trace Lite · Event Inspector</title>
+  <style>
+    :root { color-scheme: dark; --ink: #f4fbff; --muted: #a9c2cc; --bg: #071319; --panel: #0d2029; --line: #1d4654; --accent: #67e8f9; --good: #7ef2c2; --danger: #ff9a9a; --shadow: 0 24px 80px #02080b99; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--ink); background: radial-gradient(circle at 82% 6%, #14788a44, transparent 34rem), var(--bg); font: 16px/1.55 Inter, ui-sans-serif, system-ui, sans-serif; }
+    a { color: var(--accent); }
+    .wrap { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0 80px; }
+    .eyebrow { color: var(--accent); font: 700 .75rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { max-width: 850px; margin: 12px 0 16px; font-size: clamp(2.4rem, 7vw, 5.7rem); line-height: .95; letter-spacing: -.07em; }
+    h2 { margin: 0 0 10px; font-size: clamp(1.4rem, 3vw, 2.2rem); letter-spacing: -.03em; }
+    h3 { margin: 0 0 5px; font-size: 1rem; }
+    p { color: var(--muted); max-width: 70ch; }
+    .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 28px; align-items: end; }
+    .lede { font-size: 1.1rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .chip { border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; color: var(--muted); font: .78rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .chip.accent { border-color: #67e8f966; color: var(--accent); }
+    .panel { margin-top: 30px; padding: 24px; border: 1px solid var(--line); border-radius: 24px; background: linear-gradient(145deg, #10303bdd, #0a1b23dd); box-shadow: var(--shadow); }
+    .panel-head { display: flex; justify-content: space-between; gap: 16px; align-items: start; margin-bottom: 18px; }
+    .stamp { color: var(--good); font: 700 .75rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+    svg { display: block; width: 100%; height: auto; }
+    .inspector { display: grid; grid-template-columns: 1.25fr .75fr; gap: 18px; }
+    .event-list { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+    .event { display: grid; grid-template-columns: 92px 86px 1fr; gap: 12px; align-items: start; padding: 16px; border-top: 1px solid var(--line); }
+    .event:first-child { border-top: 0; }
+    .event time, .event .kind { color: var(--muted); font: .78rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .event .kind { color: var(--accent); }
+    .event code { overflow-wrap: anywhere; }
+    .redacted { color: var(--danger); }
+    .digest { display: grid; gap: 12px; }
+    .digest-card { padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: #07151ccc; }
+    .digest-card strong { display: block; margin-top: 8px; font: 1rem ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+    .count { color: var(--good); font-size: 1.7rem; }
+    .command { position: relative; margin-top: 16px; padding: 16px 72px 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: #041016; color: #d9faff; font: .86rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+    button.copy { position: absolute; top: 10px; right: 10px; border: 1px solid #67e8f966; border-radius: 8px; padding: 7px 9px; background: #103743; color: var(--accent); cursor: pointer; font: .75rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+    button.copy:hover, button.copy:focus-visible { border-color: var(--accent); outline: 2px solid #67e8f955; outline-offset: 2px; }
+    details { margin-top: 18px; color: var(--muted); }
+    summary { color: var(--ink); cursor: pointer; font-weight: 700; }
+    .foot { display: flex; justify-content: space-between; gap: 18px; margin-top: 28px; color: var(--muted); font-size: .9rem; }
+    @media (max-width: 760px) { .hero, .inspector { grid-template-columns: 1fr; } .panel { padding: 18px; } .event { grid-template-columns: 1fr; gap: 4px; } .foot { flex-direction: column; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero" aria-labelledby="title">
+      <div>
+        <div class="eyebrow">Agent Trace Lite · visual field guide</div>
+        <h1 id="title">See the event. Hide the secret. Keep the proof.</h1>
+        <p class="lede">A tiny JSONL stream becomes a readable local timeline with redaction and digest readback. The timeline has manners: it does not spill tokens for dramatic effect.</p>
+        <div class="chips"><span class="chip accent">agent-trace/inspect/v1</span><span class="chip">illustrative browser snapshot</span><span class="chip">no file access here</span></div>
+      </div>
+      <svg viewBox="0 0 520 300" role="img" aria-labelledby="flow-title flow-desc">
+        <title id="flow-title">Trace inspection flow</title><desc id="flow-desc">Events pass through redaction to a digest and local timeline.</desc>
+        <rect width="520" height="300" rx="24" fill="#061219" stroke="#1d5363"/>
+        <path d="M122 136h66m140 0h66m-140 0h66" stroke="#67e8f9" stroke-width="4" stroke-linecap="round"/><path d="m176 125 14 11-14 11m138-22 14 11-14 11" fill="none" stroke="#67e8f9" stroke-width="4"/>
+        <g font-family="ui-monospace,monospace" text-anchor="middle"><rect x="24" y="100" width="98" height="72" rx="14" fill="#12313b"/><text x="73" y="130" fill="#f4fbff" font-size="14">JSONL</text><text x="73" y="151" fill="#a9c2cc" font-size="11">events</text><rect x="188" y="100" width="104" height="72" rx="14" fill="#164654"/><text x="240" y="130" fill="#67e8f9" font-size="14">REDACT</text><text x="240" y="151" fill="#a9c2cc" font-size="11">keys + text</text><rect x="356" y="100" width="140" height="72" rx="14" fill="#153b36"/><text x="426" y="130" fill="#7ef2c2" font-size="14">READ BACK</text><text x="426" y="151" fill="#a9c2cc" font-size="11">digest + view</text><text x="260" y="230" fill="#a9c2cc" font-size="12">same bytes? same digest. changed bytes? stop.</text></g>
+      </svg>
+    </section>
+
+    <section class="panel" aria-labelledby="inspect-title">
+      <div class="panel-head"><div><div class="eyebrow">01 / event inspector</div><h2 id="inspect-title">Readable enough for humans, strict enough for incidents.</h2></div><div class="stamp">● REDACTIONS 02</div></div>
+      <div class="inspector">
+        <div class="event-list" aria-label="Illustrative redacted events">
+          <article class="event"><time>10:14:02Z</time><span class="kind">tool</span><code>read_file <span class="redacted">token=[REDACTED]</span></code></article>
+          <article class="event"><time>10:14:03Z</time><span class="kind">result</span><code>loaded config.json</code></article>
+          <article class="event"><time>10:14:05Z</time><span class="kind">assistant</span><code>Found the timeout path; prepare a bounded report.</code></article>
+        </div>
+        <aside class="digest" aria-label="Illustrative integrity summary">
+          <div class="digest-card"><span class="eyebrow">raw sha-256</span><strong>3c4c…7a91</strong></div>
+          <div class="digest-card"><span class="eyebrow">redacted sha-256</span><strong>91f0…4d2e</strong></div>
+          <div class="digest-card"><span class="eyebrow">events / redactions</span><strong><span class="count">03</span> / 02</strong></div>
+        </aside>
+      </div>
+      <details><summary>What does this page prove?</summary><p>Only that the visual language makes the redaction boundary easy to inspect. The events and digests are illustrative browser data; the page does not open a file, redact a stream, or certify a trace.</p></details>
+    </section>
+
+    <section class="panel" aria-labelledby="command-title">
+      <div class="eyebrow">02 / real CLI path</div><h2 id="command-title">Inspect first, then ask a narrow question.</h2>
+      <p>Run these commands against a local JSONL file. The CLI prints deterministic counts and safe redacted matches.</p>
+      <div class="command"><code>agent-trace inspect events.jsonl</code><button class="copy" type="button" data-copy="agent-trace inspect events.jsonl">copy</button></div>
+      <div class="command"><code>agent-trace query events.jsonl --type tool --contains timeout --limit 20</code><button class="copy" type="button" data-copy="agent-trace query events.jsonl --type tool --contains timeout --limit 20">copy</button></div>
+      <p id="copy-status" role="status" aria-live="polite"></p>
+      <div class="foot"><span>Source of truth: the emitted <code>agent-trace/inspect/v1</code> or <code>agent-trace/query/v1</code> document.</span><a href="../README.md">Back to README</a></div>
+    </section>
+  </main>
+  <script>
+    document.querySelectorAll('[data-copy]').forEach((button) => button.addEventListener('click', async () => {
+      const status = document.getElementById('copy-status');
+      try { await navigator.clipboard.writeText(button.dataset.copy); button.textContent = 'copied'; status.textContent = 'Command copied. The redaction gremlin stays local.'; }
+      catch { status.textContent = 'Copy was unavailable; select the command manually.'; }
+    }));
+  </script>
+</body>
+</html>

@@ -47,6 +47,10 @@ The demo turns two local events into a redacted HTML artifact and reports exactl
 {"schema":"agent-trace/v1","events":2,"html":"<temporary>/trace.html"}
 ```
 
+Open the [redaction and event inspector walkthrough](docs/walkthrough.html) for a visual tour of
+the timeline, digest readback, and safe query path. The browser board uses illustrative events;
+it does not invoke the CLI or read your files.
+
 ## Related tools
 
 Use [Chatlens](https://github.com/jonah-ux/chatlens) to find the session, [Agent Proof](https://github.com/jonah-ux/agent-proof) to record the investigation, and [Context Pack](https://github.com/jonah-ux/context-pack) to bound the repository context alongside the trace.
