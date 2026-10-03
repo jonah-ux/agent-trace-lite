@@ -36,6 +36,11 @@ class TraceParseError(ValueError):
         self.reason = reason
 
 
+def _validate_limit(value: int | None, label: str) -> None:
+    if value is not None and (isinstance(value, bool) or value < 1):
+        raise ValueError(f"{label} must be greater than zero")
+
+
 @dataclass(frozen=True)
 class Trace:
     """Parsed events plus safe, deterministic integrity metadata."""
@@ -101,21 +106,40 @@ def redact_event(event: dict[str, Any]) -> tuple[dict[str, Any], int]:
     return value, count
 
 
-def read_trace(handle: IO[str]) -> Trace:
+def read_trace(
+    handle: IO[str],
+    *,
+    max_bytes: int | None = None,
+    max_events: int | None = None,
+    max_line_bytes: int | None = None,
+) -> Trace:
     """Read JSONL strictly, preserving sequence and refusing malformed events."""
 
+    _validate_limit(max_bytes, "max_bytes")
+    _validate_limit(max_events, "max_events")
+    _validate_limit(max_line_bytes, "max_line_bytes")
     events: list[dict[str, Any]] = []
     raw_hasher = hashlib.sha256()
     redacted_hasher = hashlib.sha256()
     source_lines = 0
     blank_lines = 0
     redactions = 0
+    consumed_bytes = 0
     for line_number, line in enumerate(handle, start=1):
         source_lines += 1
-        raw_hasher.update(line.encode("utf-8"))
+        encoded_line = line.encode("utf-8")
+        if max_line_bytes is not None and len(encoded_line) > max_line_bytes:
+            raise TraceParseError(line_number, f"line exceeds max_line_bytes ({max_line_bytes})")
+        raw_hasher.update(encoded_line)
+        if max_bytes is not None:
+            consumed_bytes += len(encoded_line)
+            if consumed_bytes > max_bytes:
+                raise TraceParseError(line_number, f"input exceeds max_bytes ({max_bytes})")
         if not line.strip():
             blank_lines += 1
             continue
+        if max_events is not None and len(events) >= max_events:
+            raise TraceParseError(line_number, f"input exceeds max_events ({max_events})")
         try:
             event = json.loads(line)
         except json.JSONDecodeError as exc:
@@ -135,6 +159,60 @@ def read_trace(handle: IO[str]) -> Trace:
         redacted_sha256=redacted_hasher.hexdigest(),
         redactions=redactions,
     )
+
+
+def query_trace(
+    handle: IO[str],
+    *,
+    event_type: str | None = None,
+    name: str | None = None,
+    contains: str | None = None,
+    limit: int | None = None,
+    max_bytes: int | None = None,
+    max_events: int | None = None,
+    max_line_bytes: int | None = None,
+) -> list[dict[str, Any]]:
+    """Query redacted events while parsing, stopping after ``limit`` matches."""
+
+    _validate_limit(limit, "limit")
+    _validate_limit(max_bytes, "max_bytes")
+    _validate_limit(max_events, "max_events")
+    _validate_limit(max_line_bytes, "max_line_bytes")
+    type_filter = event_type.casefold() if event_type else None
+    name_filter = name.casefold() if name else None
+    contains_filter = contains.casefold() if contains else None
+    matches: list[dict[str, Any]] = []
+    consumed_bytes = 0
+    event_count = 0
+    for line_number, line in enumerate(handle, start=1):
+        encoded_line = line.encode("utf-8")
+        if max_line_bytes is not None and len(encoded_line) > max_line_bytes:
+            raise TraceParseError(line_number, f"line exceeds max_line_bytes ({max_line_bytes})")
+        consumed_bytes += len(encoded_line)
+        if max_bytes is not None and consumed_bytes > max_bytes:
+            raise TraceParseError(line_number, f"input exceeds max_bytes ({max_bytes})")
+        if not line.strip():
+            continue
+        if max_events is not None and event_count >= max_events:
+            raise TraceParseError(line_number, f"input exceeds max_events ({max_events})")
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise TraceParseError(line_number, f"invalid JSON ({exc.msg})") from exc
+        if not isinstance(event, dict):
+            raise TraceParseError(line_number, "event must be a JSON object")
+        event_count += 1
+        safe_event, _ = redact_event(event)
+        if type_filter is not None and str(event.get("type", "")).casefold() != type_filter:
+            continue
+        if name_filter is not None and str(event.get("name", "")).casefold() != name_filter:
+            continue
+        if contains_filter is not None and contains_filter not in canonical_json(safe_event).casefold():
+            continue
+        matches.append(safe_event)
+        if limit is not None and len(matches) >= limit:
+            break
+    return matches
 
 
 def read_jsonl(handle: IO[str]) -> Iterable[dict[str, Any]]:
