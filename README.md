@@ -80,7 +80,7 @@ redacted representation.
 
 ## Public surface audit
 
-Run `python scripts/audit_public_surface.py --json` from a clean checkout. The receipt checks
+Run `python3 scripts/audit_public_surface.py --json` from a clean checkout. The receipt checks
 dependency and license declarations, release-workflow provenance markers, and high-signal secret
 patterns across tracked text files. Pass `--dist-dir dist` to compare wheel and sdist bytes with
 `SHA256SUMS`; missing artifacts remain `unavailable`.
@@ -88,8 +88,8 @@ patterns across tracked text files. Pass `--dist-dir dist` to compare wheel and 
 ## Development
 
 ```bash
-python -m unittest discover -s tests
-python -m build --sdist --wheel
+python3 -m unittest discover -s tests
+python3 -m build --sdist --wheel
 ```
 
 MIT licensed.
